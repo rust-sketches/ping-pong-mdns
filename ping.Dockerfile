@@ -1,5 +1,6 @@
 # STAGE1: Build the binary
 FROM rust:alpine as builder
+RUN apk add --no-cache musl-dev
 
 # Create a new empty shell project
 WORKDIR /app/ping

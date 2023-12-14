@@ -17,7 +17,8 @@ cargo run --bin pong
 In a third terminal, kick off the process by sending a message to one of them
 
 ```
-curl -v -X POST 127.0.0.1:7878/pong
+# on macOS: MY_IP=$(ipconfig getifaddr en0)
+curl -v -X POST $MY_IP:7878/pong
 ```
 
 Watch them play `ping` / `pong` in the first two terminals.
@@ -39,5 +40,5 @@ docker build -t pong -f pong.Dockerfile . && docker run --name pong -p 8787:8787
 In a third terminal, kick off the process by sending a message to one of them
 
 ```
-curl -v -X POST 127.0.0.1:8787/pong
+curl -v -X POST 127.0.0.1:8787/ping
 ```

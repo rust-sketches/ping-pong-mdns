@@ -36,7 +36,7 @@ pub fn parse_http_request(reader: &mut impl io::BufRead) -> Result<(String, Hash
     Ok((request.trim().into(), headers, body))
 }
 
-pub fn respond(response: Result<&str, &str>, stream: &mut TcpStream, mode: &str) {
+pub fn respond(response: Result<&str, &str>, stream: &mut TcpStream, partner_ip_and_port: String) {
     let (status, msg) = match response {
         Ok(msg) => ("HTTP/1.1 200 OK", msg),
         Err(msg) => ("HTTP/1.1 404 NOT FOUND", msg)
@@ -49,15 +49,14 @@ pub fn respond(response: Result<&str, &str>, stream: &mut TcpStream, mode: &str)
 
     match response {
         Ok(endpoint) => {
-            let port = if endpoint == "ping" { 8787 } else { 7878 };
-            let ip = if mode == "local" { "127.0.0.1" } else { "172.17.0.1" };
-            let host = format!("{}:{}", ip, port);
 
-            let address = host.to_socket_addrs().unwrap().next().unwrap();
+            println!("Sending response to {}", partner_ip_and_port);
+
+            let address = partner_ip_and_port.to_socket_addrs().unwrap().next().unwrap();
             let timeout = Duration::from_millis(5000);
             let mut socket = TcpStream::connect_timeout(&address, timeout).unwrap();
 
-            let payload = format!("POST /{} HTTP/1.1\r\nHost: {}", endpoint, host);
+            let payload = format!("POST /{} HTTP/1.1\r\nHost: {}", endpoint, partner_ip_and_port);
 
             socket.write(payload.as_bytes()).unwrap();
             socket.flush().unwrap();
@@ -66,7 +65,7 @@ pub fn respond(response: Result<&str, &str>, stream: &mut TcpStream, mode: &str)
     }
 }
 
-pub fn handle_connection(mut stream: TcpStream, listen_for: &str, send: &str, mode: &str) {
+pub fn handle_connection(mut stream: TcpStream, listen_for: &str, send: &str, partner_ip_and_port: String) {
     let mut reader = BufReader::new(&mut stream);
 
     match parse_http_request((&mut reader).into()) {
@@ -75,7 +74,7 @@ pub fn handle_connection(mut stream: TcpStream, listen_for: &str, send: &str, mo
                 respond(
                     Ok(send),
                     &mut stream,
-                    mode
+                    partner_ip_and_port
                 );
 
                 println!("received {}, sending {}", listen_for, send);
@@ -84,7 +83,7 @@ pub fn handle_connection(mut stream: TcpStream, listen_for: &str, send: &str, mo
                 respond(
                     Err("unrecognized request received"),
                     &mut stream,
-                    mode
+                    partner_ip_and_port
                 );
 
                 println!("received unexpected request: {}", request);
