@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "ping",
+    "pong",
+    "common"
+]
